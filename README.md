@@ -8,7 +8,7 @@ A data sonification project to build an interactive sounds of the city feature u
 
 [d3.js](https://d3js.org/)
 
-### Examples and Inspiration: 
+### Examples and Inspiration:
 
 [Sonification Workshop](https://ccrma.stanford.edu/~cc/sonify/index.html)
 
@@ -18,7 +18,8 @@ A data sonification project to build an interactive sounds of the city feature u
 
 [Data Sonification for Beginners](https://mlaetsc.hcommons.org/2023/01/18/data-sonification-for-beginners/)
 
-
-### Documentation
+### Documentation:
 
 [Query Documentation for JSON files](queryDocumentation.md)
+
+[Query and Processing Documentation for CSV file](csvDocumentation.md)
