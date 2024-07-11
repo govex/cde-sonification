@@ -17,3 +17,8 @@ A data sonification project to build an interactive sounds of the city feature u
 [London Under the Microscope](https://blog.duncangeere.com/london-under-the-microscope/)
 
 [Data Sonification for Beginners](https://mlaetsc.hcommons.org/2023/01/18/data-sonification-for-beginners/)
+
+
+### Documentation
+
+[Query Documentation for JSON files](queryDocumentation.md)
