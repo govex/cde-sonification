@@ -64,7 +64,7 @@ variables:
 }
 ```
 
-## Metrics.json
+## Serieses.json
 
 query:
 
