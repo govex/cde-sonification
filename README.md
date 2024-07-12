@@ -18,7 +18,7 @@ A data sonification project to build an interactive sounds of the city feature u
 
 [Data Sonification for Beginners](https://mlaetsc.hcommons.org/2023/01/18/data-sonification-for-beginners/)
 
-[Exploreing Dataset Sonification with Web Audio](https://aleksati.net/posts/exploring-dataset-sonification-with-web-audio)
+[Exploring Dataset Sonification with Web Audio](https://aleksati.net/posts/exploring-dataset-sonification-with-web-audio)
 
 ### Documentation:
 
