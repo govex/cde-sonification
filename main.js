@@ -1,8 +1,6 @@
 const MIN_PITCH = -12;
 const MAX_PITCH = 12;
 
-let spec = new Erie.Stream();
-
 document.addEventListener("DOMContentLoaded", async () => {
     init();
 });
