@@ -25,3 +25,5 @@ A data sonification project to build an interactive sounds of the city feature u
 [Query Documentation for JSON files](queryDocumentation.md)
 
 [Query and Processing Documentation for CSV file](csvDocumentation.md)
+
+[SvelteKit App Documentation](svelte-app/README.md)
