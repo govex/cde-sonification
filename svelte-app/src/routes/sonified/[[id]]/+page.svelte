@@ -7,6 +7,7 @@
 
   // define empty and fillable variables
   let cityData: any;
+  let seriesInfo: { [ name: string ]: { tone: Erie.SampledTone, isPlaying: boolean, data: object[] } } = {};
 
   // define dynamic variables and processes
   $: pageParams = $page.params as RouteParams;
@@ -17,6 +18,16 @@
   // asynchronous function for importing city data
   async function processDataFile(id: string) {
     cityData = (await import(/* @vite-ignore */ `./cities/${id}.json`)).default;
+    console.log('city data', cityData);
+    cityData?.data.serieses.forEach((series) => {
+      if (series.SeriesValues.length > 0) {
+        seriesInfo[series.SeriesDescriptions[0].display_axis_primary] = {
+          tone: new Erie.SampledTone("sample_audio", { mono: "cde-sonification/svelte-app/src/lib/traffic-in-the-city-185203.mp3" }),
+          isPlaying: false,
+          data: series.SeriesValues
+        }
+      };
+    });
   }
 
   // function to interpret the trend scalar and the trend values to human readable text
@@ -48,9 +59,52 @@
     }
     if (scalarText !== undefined && trendText !== undefined) return `${scalarText} numbers mean improvement and this metric is ${trendText}`;
   }
+
   // erie code goes here
-  let spec = new Erie.Stream();
-  console.log(spec);
+  let stream = new Erie.Stream();
+
+  async function playSound(seriesName: string) {
+    let series = seriesInfo[seriesName];
+    if (series.isPlaying) {
+      // reset erie stream
+    } else {
+      stream.name(seriesName);
+
+      // tone
+      stream.sampling.add(series.tone);
+      stream.tone.set(series.tone);
+
+      // data
+      stream.data.set("values", series.data);
+      console.log('stream data', stream.data)
+
+      // transform
+      let bin = new Erie.Bin("value");
+      bin.as("value-bin", "value-bin-end").nice(true);
+      stream.transform.add(bin);
+
+      let aggregate = new Erie.Aggregate();
+      aggregate.add("count", "count").groupby(["value"]);
+      stream.transform.add(aggregate);
+      stream.tone.continued(false);
+
+      // encoding
+      stream.encoding.time.field("value-bin", "quantitative")
+        .scale("timing", "absolute").scale("length", 4.5);
+      stream.encoding.time2.field("value-bin-end", "quantitative");
+      stream.encoding.time.scale("length", 5)
+        .scale("domain", [0, 100]).scale("range", [220, 660]).scale("polarity", "positive");
+
+      // play sound
+      let audioQueue = await Erie.compileAudioGraph(stream.get());
+      audioQueue.queue.play();
+
+      series.isPlaying = !series.isPlaying;
+    }
+  }
+
+  
+
 
 </script>
 
@@ -59,15 +113,23 @@
 {:else}
   <h1>Hello, {place?.PlaceDescriptions[0].display_label}!</h1>
 {/if}
-
 {#if data?.serieses.length > 0}
   {#each data.serieses as series}
     {#if series.SeriesValues.length > 0}
       <h2>{series.SeriesDescriptions[0].display_axis_primary}</h2>
+      
       <p>{format(series.value_format)(+series.SeriesValues[0].value)} {series.SeriesDescriptions[0].display_axis_secondary || ""}</p>
         {#if series.Metric.trend_scalar && series.SeriesValues[0].trend}
           <p>{processTrend(+series.Metric.trend_scalar, +series.SeriesValues[0].trend)}</p>
         {/if}
+        
+      <button id="play-button-{series.SeriesDescriptions[0].display_axis_primary}" on:click={() => playSound(series.SeriesDescriptions[0].display_axis_primary)}>
+        {#if seriesInfo[series.SeriesDescriptions[0].display_axis_primary].isPlaying}
+          Stop
+        {:else}
+          Play
+        {/if}
+      </button>
     {/if}
   {/each}
 {:else}

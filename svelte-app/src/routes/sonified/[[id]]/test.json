@@ -1,0 +1,26 @@
+{
+    "data" : {
+      "values": [
+        {
+          "category": "A",
+          "sparsity": 0.5
+        },
+        {
+          "category": "B",
+          "sparsity": 0.1
+        },
+        {
+          "category": "C",
+          "sparsity": 0.9
+        },
+        {
+          "category": "D",
+          "sparsity": 1
+        },
+        {
+          "category": "E",
+          "sparsity": 0.75
+        }
+      ]
+    }
+  }
