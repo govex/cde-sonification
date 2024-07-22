@@ -18,11 +18,10 @@
   // asynchronous function for importing city data
   async function processDataFile(id: string) {
     cityData = (await import(/* @vite-ignore */ `./cities/${id}.json`)).default;
-    console.log('city data', cityData);
     cityData?.data.serieses.forEach((series) => {
       if (series.SeriesValues.length > 0) {
         seriesInfo[series.SeriesDescriptions[0].display_axis_primary] = {
-          tone: new Erie.SampledTone("sample_audio", { mono: "cde-sonification/svelte-app/src/lib/traffic-in-the-city-185203.mp3" }),
+          tone: new Erie.SampledTone("sample_audio", {mono: "https://tonejs.github.io/audio/berklee/gong_1.mp3"}),
           isPlaying: false,
           data: series.SeriesValues
         }
@@ -61,11 +60,13 @@
   }
 
   // erie code goes here
+  
   let stream = new Erie.Stream();
 
   async function playSound(seriesName: string) {
     let series = seriesInfo[seriesName];
-    if (series.isPlaying) {
+    series.isPlaying = !series.isPlaying;
+    if (!series.isPlaying) {
       // reset erie stream
     } else {
       stream.name(seriesName);
@@ -75,31 +76,30 @@
       stream.tone.set(series.tone);
 
       // data
+      stream.data.set("name", "data__1");
       stream.data.set("values", series.data);
-      console.log('stream data', stream.data)
+      console.log('stream data', stream.data);
 
       // transform
       let bin = new Erie.Bin("value");
       bin.as("value-bin", "value-bin-end").nice(true);
       stream.transform.add(bin);
 
-      let aggregate = new Erie.Aggregate();
-      aggregate.add("count", "count").groupby(["value"]);
-      stream.transform.add(aggregate);
-      stream.tone.continued(false);
-
       // encoding
       stream.encoding.time.field("value-bin", "quantitative")
-        .scale("timing", "absolute").scale("length", 4.5);
-      stream.encoding.time2.field("value-bin-end", "quantitative");
-      stream.encoding.time.scale("length", 5)
-        .scale("domain", [0, 100]).scale("range", [220, 660]).scale("polarity", "positive");
+        .scale("timing", "absolute")
+        .scale("length", 4.5)
+
+      stream.encoding.time2.field("value-bin-end", "quantitative")
+
+      stream.encoding.detune.field("value-bin", "quantitative")
+        .scale("polarity", "positive")
+        .format("0.4");
 
       // play sound
       let audioQueue = await Erie.compileAudioGraph(stream.get());
-      audioQueue.queue.play();
-
-      series.isPlaying = !series.isPlaying;
+      console.log('stream.get():', stream.get())
+      audioQueue.playQueue();
     }
   }
 
@@ -123,7 +123,7 @@
           <p>{processTrend(+series.Metric.trend_scalar, +series.SeriesValues[0].trend)}</p>
         {/if}
         
-      <button id="play-button-{series.SeriesDescriptions[0].display_axis_primary}" on:click={() => playSound(series.SeriesDescriptions[0].display_axis_primary)}>
+      <button id="play-button-{series.SeriesDescriptions[0].display_axis_primary}" on:click={async(e) => await playSound(series.SeriesDescriptions[0].display_axis_primary)}>
         {#if seriesInfo[series.SeriesDescriptions[0].display_axis_primary].isPlaying}
           Stop
         {:else}
