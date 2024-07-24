@@ -7,23 +7,35 @@
 
   // define empty and fillable variables
   let cityData: any;
-  let seriesInfo: { [ name: string ]: { tone: Erie.SampledTone, isPlaying: boolean, data: object[] } } = {};
+  let soundURL: URL;
+  let seriesInfo: { 
+    [ name: string ]: { 
+      tone: Erie.SampledTone,
+      stopped: boolean,
+      data: object[],
+      audioQueue: Erie.SequenceStream
+    }
+  } = {};
 
   // define dynamic variables and processes
   $: pageParams = $page.params as RouteParams;
   $: place = places.data.places.find(f => f.id == pageParams.id)
   $: data = cityData?.data;
   $: if (typeof pageParams.id === "string") processDataFile(pageParams.id);
+  $: soundIsPlaying = false;
 
   // asynchronous function for importing city data
   async function processDataFile(id: string) {
     cityData = (await import(/* @vite-ignore */ `./cities/${id}.json`)).default;
+    soundURL = new URL(`./sounds/keyboard-typing.mp3`, import.meta.url);
+
     cityData?.data.serieses.forEach((series) => {
       if (series.SeriesValues.length > 0) {
         seriesInfo[series.SeriesDescriptions[0].display_axis_primary] = {
-          tone: new Erie.SampledTone("sample_audio", {mono: "https://tonejs.github.io/audio/berklee/gong_1.mp3"}),
-          isPlaying: false,
-          data: series.SeriesValues
+          tone: new Erie.SampledTone("sample_audio", {mono: soundURL}),
+          stopped: true,
+          data: series.SeriesValues,
+          audioQueue: undefined
         }
       };
     });
@@ -62,49 +74,48 @@
   // erie code goes here
   
   let stream = new Erie.Stream();
+  
+  // skip narration
+  stream.config.set('skipStartSpeech', true);
+  stream.config.set('skipScaleSpeech', true);
+  stream.config.set('skipStartPlaySpeech', true);
+  stream.config.set('skipFinishSpeech', true);
+  stream.config.set('skipStopSpeech', true);
 
   async function playSound(seriesName: string) {
+    seriesInfo[seriesName].stopped = !seriesInfo[seriesName].stopped;
     let series = seriesInfo[seriesName];
-    series.isPlaying = !series.isPlaying;
-    if (!series.isPlaying) {
-      // reset erie stream
+    if (series.audioQueue && series.stopped) {
+      series.audioQueue.stopQueue();
     } else {
       stream.name(seriesName);
 
       // tone
       stream.sampling.add(series.tone);
       stream.tone.set(series.tone);
+      stream.tone.continued(false);
 
       // data
       stream.data.set("name", "data__1");
       stream.data.set("values", series.data);
       console.log('stream data', stream.data);
 
-      // transform
-      let bin = new Erie.Bin("value");
-      bin.as("value-bin", "value-bin-end").nice(true);
-      stream.transform.add(bin);
-
       // encoding
-      stream.encoding.time.field("value-bin", "quantitative")
-        .scale("timing", "absolute")
-        .scale("length", 4.5)
+      stream.encoding.time.field("date", "nominal")
+        .scale("band", 0.5);
 
-      stream.encoding.time2.field("value-bin-end", "quantitative")
-
-      stream.encoding.detune.field("value-bin", "quantitative")
+      stream.encoding.detune.field("value", "quantitative")
         .scale("polarity", "positive")
-        .format("0.4");
+        .scale("range", [100, 700])
+        .format("0.4")
 
       // play sound
-      let audioQueue = await Erie.compileAudioGraph(stream.get());
+      series.audioQueue = await Erie.compileAudioGraph(stream.get());
+      console.log('audioQueue', series.audioQueue)
       console.log('stream.get():', stream.get())
-      audioQueue.playQueue();
+      series.audioQueue.playQueue();
     }
   }
-
-  
-
 
 </script>
 
@@ -123,11 +134,14 @@
           <p>{processTrend(+series.Metric.trend_scalar, +series.SeriesValues[0].trend)}</p>
         {/if}
         
-      <button id="play-button-{series.SeriesDescriptions[0].display_axis_primary}" on:click={async(e) => await playSound(series.SeriesDescriptions[0].display_axis_primary)}>
-        {#if seriesInfo[series.SeriesDescriptions[0].display_axis_primary].isPlaying}
-          Stop
-        {:else}
+      <button 
+        id="play-button-{series.SeriesDescriptions[0].display_axis_primary}"
+        on:click={async(e) => await playSound(series.SeriesDescriptions[0].display_axis_primary)}
+        >
+        {#if seriesInfo[series.SeriesDescriptions[0].display_axis_primary].stopped}
           Play
+        {:else}
+          Stop
         {/if}
       </button>
     {/if}
