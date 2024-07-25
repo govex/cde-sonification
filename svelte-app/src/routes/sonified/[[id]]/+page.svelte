@@ -27,7 +27,7 @@
   // asynchronous function for importing city data
   async function processDataFile(id: string) {
     cityData = (await import(/* @vite-ignore */ `./cities/${id}.json`)).default;
-    soundURL = new URL(`./sounds/keyboard-typing.mp3`, import.meta.url);
+    soundURL = new URL(`./sounds/birdsong.wav`, import.meta.url);
 
     cityData?.data.serieses.forEach((series) => {
       if (series.SeriesValues.length > 0) {
@@ -102,7 +102,7 @@
 
       // encoding
       stream.encoding.time.field("date", "nominal")
-        .scale("band", 0.5);
+        .scale("band", 1.0);
 
       stream.encoding.detune.field("value", "quantitative")
         .scale("polarity", "positive")
@@ -113,7 +113,8 @@
       series.audioQueue = await Erie.compileAudioGraph(stream.get());
       console.log('audioQueue', series.audioQueue)
       console.log('stream.get():', stream.get())
-      series.audioQueue.playQueue();
+      await series.audioQueue.playQueue();
+      seriesInfo[seriesName].stopped = !seriesInfo[seriesName].stopped;
     }
   }
 
