@@ -91,8 +91,6 @@
 
     let streams: Erie.Stream = [];
 
-    let num = 3;
-
     chosenSerieses.forEach((seriesName) => {
       let series = seriesInfo[seriesName];
       let min = seriesMaxAndMin[seriesName].min;
