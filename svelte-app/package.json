@@ -13,6 +13,7 @@
 	"devDependencies": {
 		"@sveltejs/adapter-static": "^2.0.3",
 		"@sveltejs/kit": "^1.20.4",
+		"@types/luxon": "^3.4.2",
 		"gh-pages": "^6.0.0",
 		"svelte": "^4.0.5",
 		"svelte-check": "^3.4.3",
@@ -22,6 +23,8 @@
 	},
 	"type": "module",
 	"dependencies": {
-		"erie-web": "^0.3.8"
+		"erie-web": "^0.3.8",
+		"luxon": "^3.4.4",
+		"waveform-path": "^0.0.1"
 	}
 }
