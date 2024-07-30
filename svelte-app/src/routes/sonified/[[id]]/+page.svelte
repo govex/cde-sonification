@@ -17,17 +17,25 @@
     }
   } = {};
 
+  let seriesMaxAndMin: {
+    [ name: string ]: {
+      min: number,
+      max: number
+    }
+  } = {};
+
+  let chosenSerieses: string[] = [];
+
   // define dynamic variables and processes
   $: pageParams = $page.params as RouteParams;
   $: place = places.data.places.find(f => f.id == pageParams.id)
   $: data = cityData?.data;
   $: if (typeof pageParams.id === "string") processDataFile(pageParams.id);
-  $: soundIsPlaying = false;
 
   // asynchronous function for importing city data
   async function processDataFile(id: string) {
     cityData = (await import(/* @vite-ignore */ `./cities/${id}.json`)).default;
-    soundURL = new URL(`./sounds/birdsong.wav`, import.meta.url);
+    soundURL = new URL(`./sounds/keyboard-typing.mp3`, import.meta.url);
 
     cityData?.data.serieses.forEach((series) => {
       if (series.SeriesValues.length > 0) {
@@ -36,6 +44,11 @@
           stopped: true,
           data: series.SeriesValues,
           audioQueue: undefined
+        }
+
+        seriesMaxAndMin[series.SeriesDescriptions[0].display_axis_primary] = {
+          min: series.display_min_value,
+          max: series.display_max_value
         }
       };
     });
@@ -72,17 +85,69 @@
   }
 
   // erie code goes here
-  
-  let stream = new Erie.Stream();
-  
-  // skip narration
-  stream.config.set('skipStartSpeech', true);
-  stream.config.set('skipScaleSpeech', true);
-  stream.config.set('skipStartPlaySpeech', true);
-  stream.config.set('skipFinishSpeech', true);
-  stream.config.set('skipStopSpeech', true);
+
+  async function playOverlay() {
+    setChosenSerieses();
+
+    let streams: Erie.Stream = [];
+
+    let num = 3;
+
+    chosenSerieses.forEach((seriesName) => {
+      let series = seriesInfo[seriesName];
+      let min = seriesMaxAndMin[seriesName].min;
+      let max = seriesMaxAndMin[seriesName].max;
+
+      let stream = new Erie.Stream();
+
+      stream.sampling.add(series.tone);
+      stream.tone.set(series.tone);
+
+      // stream.data.set("values", series.data);
+
+      stream.encoding.time.field("date", "nominal")
+        .scale("band", 1.0);
+
+      stream.encoding.detune.field("value", "quantitative")
+        .scale("polarity", "positive")
+        .scale("domain", [min, max])
+        .scale("range", [100, 700])
+        .format("0.4")
+
+      streams.push(stream);
+    })
+
+    let overlay = new Erie.Overlay(streams);
+
+    console.log('overlay.get()', overlay.get());
+    let audioQueue = await Erie.compileAudioGraph(overlay.get());
+    await audioQueue.playQueue();
+  }
+
+  function setChosenSerieses() {
+    chosenSerieses = [];
+    const container = document.getElementById('chosen-serieses');
+    const checkboxes = container.querySelectorAll('input[type="checkbox"]');
+
+    checkboxes.forEach((checkbox) => {
+      if (checkbox.checked) {
+        chosenSerieses.push(checkbox.value);
+      }
+    })
+    
+    console.log('Chosen Serieses:', chosenSerieses);
+  }
 
   async function playSound(seriesName: string) {
+    let stream = new Erie.Stream();
+
+    // skip narration
+    stream.config.set('skipStartSpeech', true);
+    stream.config.set('skipScaleSpeech', true);
+    stream.config.set('skipStartPlaySpeech', true);
+    stream.config.set('skipFinishSpeech', true);
+    stream.config.set('skipStopSpeech', true);
+
     seriesInfo[seriesName].stopped = !seriesInfo[seriesName].stopped;
     let series = seriesInfo[seriesName];
     if (series.audioQueue && series.stopped) {
@@ -98,7 +163,6 @@
       // data
       stream.data.set("name", "data__1");
       stream.data.set("values", series.data);
-      console.log('stream data', stream.data);
 
       // encoding
       stream.encoding.time.field("date", "nominal")
@@ -124,7 +188,27 @@
   <h1>Hello... whoops, no ID</h1>
 {:else}
   <h1>Hello, {place?.PlaceDescriptions[0].display_label}!</h1>
+  {#if data?.serieses.length > 0}
+    <div id="chosen-serieses">
+      {#each data.serieses as series}
+        {#if series.SeriesValues.length > 0}
+          <div>
+          <input id="checkbox-{series.SeriesDescriptions[0].display_axis_primary}" type="checkbox" value="{series.SeriesDescriptions[0].display_axis_primary}" />
+          <label for="checkbox-{series.SeriesDescriptions[0].display_axis_primary}">{series.SeriesDescriptions[0].display_axis_primary}</label>
+          </div>
+        {/if}
+      {/each}
+    </div>
+    <button on:click={async(e) => await playOverlay()}>
+      Play
+    </button>
+{:else}
+  <h2>We don't have that data yet!</h2>
 {/if}
+
+
+{/if}
+
 {#if data?.serieses.length > 0}
   {#each data.serieses as series}
     {#if series.SeriesValues.length > 0}
