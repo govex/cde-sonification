@@ -22,6 +22,15 @@
     "keyboard-typing.mp3",
     "wind-chimes.mp3"
   ]
+
+  let audios: {
+    [ name: string ]: {
+      audioQueue: Erie.SequenceStream,
+      playing: boolean
+    }
+  } = {};
+
+  $: stopped: series_selection.length === 0;
   $: place_label = selected_place?.PlaceDescriptions[0].display_label;
   $: serieses = seriesvalues.data.serieses.map((m,i) => {
     let seriesInfo = {
@@ -59,6 +68,7 @@
         value_format: seriesDescription?.value_format,
         display_axis_secondary: seriesDescription?.SeriesDescriptions[0].display_axis_secondary,
         sound: audioData,
+        soundfile: seriesInfo?.soundfile
       })
     })
     return overlayData;
@@ -106,24 +116,124 @@
   }
   
   // erie code goes here
-  
-  let stream = new Erie.Stream();
-  
-  // skip narration
-  stream.config.set('skipStartSpeech', true);
-  stream.config.set('skipScaleSpeech', true);
-  stream.config.set('skipStartPlaySpeech', true);
-  stream.config.set('skipFinishSpeech', true);
-  stream.config.set('skipStopSpeech', true);
 
-  async function playSound(soundData:any) {
-    console.log(soundData)
+  async function play(soundData:any) {
+    console.log('soundData', soundData)
     if (stopped === false) {
-      stopped = true
+      stopped = true;
+
     } else {
-      stopped = false
+      stopped = false;
+      let overlay = new Erie.Overlay();
+      overlay.config.set('skipStartSpeech', true);
+      overlay.config.set('skipScaleSpeech', true);
+      overlay.config.set('skipStartPlaySpeech', true);
+      overlay.config.set('skipFinishSpeech', true);
+
+
+      soundData.forEach((series) => {
+        let stream = new Erie.Stream();
+
+        let soundURL = new URL(`./sounds/${series.soundfile}`, import.meta.url);
+        let tone = new Erie.SampledTone("sample_audio", { mono: soundURL })
+        stream.sampling.add(tone);
+        stream.tone.set(tone);
+        stream.tone.continued(false);
+
+        stream.encoding.time.field("series_id", "nominal")
+        .scale("band", 2.0);
+
+        stream.encoding.detune.field("place_value", "quantitative")
+          .scale("polarity", "positive")
+          .scale("domain", [series.min, series.max])
+          .scale("range", [100, 700])
+          .format("0.4")
+
+        overlay.overlay.push(stream);
+      })
+
+      //overlay.data.set("name", "data__1");
+      //overlay.data.set("values", soundData);
+
+      let dataset = new Erie.Dataset("data__1");
+      dataset.set("values", soundData);
+      overlay.data.set("name", "data__1");
+      
+      console.log('overlay.get()', overlay.get())
+      let audioQueue = await Erie.compileAudioGraph(overlay.get());
+      await audioQueue.playQueue();
+      audioQueue.destroy();
     }
   }
+
+  function filterData(place_id:string, series_id:string) {
+    let seriesInfo = serieses.find(s => s.id === series_id);
+    if (!seriesInfo) {
+      return null;
+    }
+    let placeInfo = seriesInfo.data.find(p => p.place_id === place_id);
+    if (!placeInfo) {
+      return null;
+    }
+    return {
+      min: seriesInfo.min,
+      max: seriesInfo.max,
+      date: placeInfo.date.ts,
+      value: placeInfo.value,
+      sound: seriesInfo.soundfile
+    }
+  }
+
+  async function playSound(event) {
+    let series_id = event.target.value;
+    let data = filterData(selected_place.id, series_id)
+    console.log('data', data);
+
+    if (event.target.checked) {
+      let stream = new Erie.Stream();
+
+      // skip narration
+      stream.config.set('skipStartSpeech', true);
+      stream.config.set('skipScaleSpeech', true);
+      stream.config.set('skipStartPlaySpeech', true);
+      stream.config.set('skipFinishSpeech', true);
+
+      // tone
+      let soundURL = new URL(`./sounds/${data.sound}`, import.meta.url);
+      let tone = new Erie.SampledTone("sample_audio", { mono: soundURL })
+      stream.sampling.add(tone);
+      stream.tone.set(tone);
+      stream.tone.continued(false);
+
+      // data
+      stream.data.set("name", "data__1");
+      stream.data.set("values", [ { date: data.date, value: data.value } ]);
+
+      // encoding
+      stream.encoding.time.field("date", "nominal")
+        .scale("band", 500);
+
+      stream.encoding.detune.field("value", "quantitative")
+        .scale("polarity", "positive")
+        .scale("domain", [data.min, data.max])
+        .scale("range", [100, 700])
+        .format("0.4")
+
+      // play sound
+      let audioQueue = await Erie.compileAudioGraph(stream.get());
+      audios[series_id] = {
+        audioQueue: audioQueue,
+        playing: true
+      }
+      await audios[series_id].audioQueue.playQueue();
+      audios[series_id].playing = false;
+
+    } else {
+      audios[series_id].playing = false;
+      audios[series_id].audioQueue.stopQueue();
+    }
+  }
+
 </script>
 
 <h1>What does a city's data sound like?</h1>
@@ -152,7 +262,12 @@
           : ""}
         >
           <label>
-            <input type="checkbox" bind:group={series_selection} value={series.id} disabled={disableCheckbox(selected_place.id, series.id)} /> 
+            <input
+              type="checkbox"
+              bind:group={series_selection}
+              value={series.id}
+              disabled={disableCheckbox(selected_place.id, series.id)}
+            /> 
             {series.SeriesDescriptions[0].display_axis_primary}
           </label>
         </div>
@@ -164,10 +279,11 @@
       {#await overlayData}
         <div>...loading data</div>
       {:then soundData}
+
       <div>
         <button 
           id="play-button"
-          on:click={async(e) => await playSound(soundData)}
+          on:click={async(e) => await play(soundData)}
           >
           {#if stopped}
             Play
