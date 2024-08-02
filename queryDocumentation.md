@@ -69,16 +69,21 @@ variables:
 query:
 
 ```javascript
-query Metrics($displayOnWebsite: Boolean, $chartType: String, $seriesDisplayOnWebsite2: Boolean, $language: String) {
-  metrics(display_on_website: $displayOnWebsite) {
-    Series(chart_type: $chartType, display_on_website: $seriesDisplayOnWebsite2) {
-      SeriesDescriptions(language: $language) {
-        display_axis_primary
-        display_axis_secondary
-        display_details
-        display_label
-        display_methodology
-      }
+query Serieses($chartType: String, $displayOnWebsite: Boolean, $language: String) {
+  serieses(chart_type: $chartType, display_on_website: $displayOnWebsite) {
+    id
+    value_format
+    display_min_value
+    display_max_value
+    Metric {
+      trend_scalar
+    }
+    SeriesDescriptions(language: $language) {
+      display_axis_primary
+      display_axis_secondary
+      display_details
+      display_label
+      display_methodology
     }
   }
 }
@@ -88,9 +93,8 @@ variables:
 
 ```javascript
 {
-  "displayOnWebsite": true,
   "chartType": "timeline",
-  "seriesDisplayOnWebsite2": true,
+  "displayOnWebsite": true,
   "language": "EN"
 }
 ```
