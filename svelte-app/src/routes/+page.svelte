@@ -5,16 +5,21 @@
   import { DateTime } from "luxon";
   import { getAudioData, linearPath } from "waveform-path";
   import { format } from "d3";
-  import * as Erie from 'erie-web';
+  // import * as Erie from 'erie-web';
+  import { AudioContext } from 'standardized-audio-context';
 
+  const standardizedAudioContext = new AudioContext();
   let stopped = true;
   let selected_place: any;
   let series_selection:string[] = [];
+  let overlayComplete = false;
+  let specComplete = false;
 
   // we can alter this so it's a better mapping of sound -> series_id
   // let sounds be an object with series_id as key and filename as value 
   // ex: { city_overview-households-totals_yearly: construction_noise.wav }
   let sounds = [
+    "keyboard-fast-typing.mp3",
     "bells.wav",
     "birdsong.wav",
     "cardinal.mp3",
@@ -71,9 +76,12 @@
         soundfile: seriesInfo?.soundfile
       })
     })
+    overlayComplete = true
     return overlayData;
   }
   $: overlayData = compileData(selected_place, series_selection);
+  $: spec = series_selection.length > 0 && overlayComplete ? overlayData.then(d => generateSpec(d)) : null;
+  $: audio = specComplete ? spec?.then((s) => Erie.compileAudioGraph(s.get())) : null;
 
   // function to insure a checkbox is not clickable 
   // if there's no data to load for the selected city
@@ -116,56 +124,46 @@
   }
   
   // erie code goes here
+  async function generateSpec(soundData:any) {
+    // soundData.then((data:any) => {
+      let data = soundData;
+      console.log("then data", data);
+      let dataset = new Erie.Dataset("data");
+      dataset.set("values", data.map((m:any) => {
+        return {series_id: m.series_id, place_value: m.place_value}
+      }));
+      console.log(dataset)
+      let stream = new Erie.Stream();
+      stream.data.set(dataset);
+      stream.tone.continued(false);
+      stream.encoding.time.field('series_id', 'nominal')
+        .scale("timing", "simultaneous");
+      stream.encoding.timbre.field("series_id", "nominal")
+        .scale("domain", data.map(m => m.series_id))
+        .scale("range", data.map(m => m.soundfile))
+      console.log(stream)
+      let spec = new Erie.Overlay(stream);
+      spec.datasets.add(dataset)
 
-  async function play(soundData:any) {
-    console.log('soundData', soundData)
-    if (stopped === false) {
-      stopped = true;
-
-    } else {
-      stopped = false;
-      let overlay = new Erie.Overlay();
-      overlay.config.set('skipStartSpeech', true);
-      overlay.config.set('skipScaleSpeech', true);
-      overlay.config.set('skipStartPlaySpeech', true);
-      overlay.config.set('skipFinishSpeech', true);
-
-
-      soundData.forEach((series) => {
-        let stream = new Erie.Stream();
-
+      data.forEach((series:any) => {
         let soundURL = new URL(`./sounds/${series.soundfile}`, import.meta.url);
-        let tone = new Erie.SampledTone("sample_audio", { mono: soundURL })
-        stream.sampling.add(tone);
-        stream.tone.set(tone);
-        stream.tone.continued(false);
-
-        stream.encoding.time.field("series_id", "nominal")
-        .scale("band", 2.0);
-
-        stream.encoding.detune.field("place_value", "quantitative")
-          .scale("polarity", "positive")
-          .scale("domain", [series.min, series.max])
-          .scale("range", [100, 700])
-          .format("0.4")
-
-        overlay.overlay.push(stream);
+        let sample = new Erie.SampledTone(series.soundfile, { mono: soundURL });
+        spec.sampling.add(sample);
       })
-
-      //overlay.data.set("name", "data__1");
-      //overlay.data.set("values", soundData);
-
-      let dataset = new Erie.Dataset("data__1");
-      dataset.set("values", soundData);
-      overlay.data.set("name", "data__1");
-      
-      console.log('overlay.get()', overlay.get())
-      let audioQueue = await Erie.compileAudioGraph(overlay.get());
-      await audioQueue.playQueue();
-      audioQueue.destroy();
-    }
+      console.log("generateSpec", spec)
+      specComplete = true;
+      return spec;
+    // });
   }
 
+  function playAudio() {
+    console.log(overlayData)
+    console.log(spec)
+    spec?.then(s => {
+      let audiograph = Erie.compileAudioGraph(s);
+      console.log(audiograph);
+    })
+  }
   function filterData(place_id:string, series_id:string) {
     let seriesInfo = serieses.find(s => s.id === series_id);
     if (!seriesInfo) {
@@ -178,13 +176,13 @@
     return {
       min: seriesInfo.min,
       max: seriesInfo.max,
-      date: placeInfo.date.ts,
+      date: placeInfo.date,
       value: placeInfo.value,
       sound: seriesInfo.soundfile
     }
   }
 
-  async function playSound(event) {
+  async function playSound(event:any) {
     let series_id = event.target.value;
     let data = filterData(selected_place.id, series_id)
     console.log('data', data);
@@ -277,13 +275,15 @@
     <div id="waveform">
       {#if series_selection.length > 0}
       {#await overlayData}
-        <div>...loading data</div>
+      <div>...loading data</div>
       {:then soundData}
-
+      {#await audio}
+      <div>...compiling audio queue</div>
+      {:then audioQueue}
       <div>
         <button 
           id="play-button"
-          on:click={async(e) => await play(soundData)}
+          on:click={()=> playAudio()}
           >
           {#if stopped}
             Play
@@ -292,7 +292,7 @@
           {/if}
         </button>
       </div>
-
+      {/await}
       <svg width=400 height=200>
         <defs>
           <linearGradient id="lgrad" x1="0%" y1="50%" x2="100%" y2="50%" >
