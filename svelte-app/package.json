@@ -23,7 +23,7 @@
 	},
 	"type": "module",
 	"dependencies": {
-		"erie-web": "^0.3.8",
+		"erie-web": "file:erie-web-0.3.8.tgz",
 		"luxon": "^3.4.4",
 		"waveform-path": "^0.0.1"
 	}
