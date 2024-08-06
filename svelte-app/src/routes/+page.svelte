@@ -69,7 +69,37 @@
     return overlayData;
   }
   $: overlayData = compileData(selected_place, series_selection);
+  $: spec = series_selection.length > 0 ? overlayData.then((d) =>generateSpec(d)) : null;
+  $: audio = spec?.then((s) => Erie.compileAudioGraph(s.get()))
 
+  async function generateSpec(soundData:any) {
+    let data = soundData;
+    let dataset = new Erie.Dataset("data");
+    dataset.set("values", data.map((m:any) => {
+      return {series_id: m.series_id, place_value: m.place_value}
+    }));
+    let stream = new Erie.Stream();
+    stream.data.set(dataset);
+    stream.tone.continued(false);
+    stream.encoding.time.field('series_id', 'nominal')
+      .scale("timing", "simultaneous");
+    stream.encoding.timbre.field("series_id", "nominal")
+      .scale("domain", data.map((m:any) => m.series_id))
+      .scale("range", data.map((m:any) => m.soundfile))
+      .scale("description", "skip");
+    stream.encoding.duration.field("place_value", "quantitative")
+      .scale("range", [1,10])
+      .scale("description", "skip")
+    let spec = new Erie.Overlay(stream);
+    spec.datasets.add(dataset)
+
+    data.forEach((series:any) => {
+      let soundURL = new URL(`./sounds/${series.soundfile}`, import.meta.url);
+      let sample = new Erie.SampledTone(series.soundfile, { mono: soundURL });
+      spec.sampling.add(sample);
+    })
+    return spec;
+  }
   // function to insure a checkbox is not clickable 
   // if there's no data to load for the selected city
   function disableCheckbox(place_id:string, series_id:string) {
@@ -275,9 +305,22 @@
       {:then soundData}
 
       <div>
+        {#await audio}
+        <div>...compiling audio queue</div>
+        {:then audioQueue}
         <button 
           id="play-button"
-          on:click={async(e) => await play(soundData)}
+          on:click={() => {
+            if (audioQueue) {
+              if (stopped) {
+                audioQueue.playQueue()
+                stopped = false
+              } else {
+                audioQueue.stopQueue()
+                stopped = true
+              }
+            }
+          }}
           >
           {#if stopped}
             Play
@@ -285,6 +328,7 @@
             Stop
           {/if}
         </button>
+        {/await}
       </div>
 
       <svg width=400 height=200>
