@@ -6,6 +6,7 @@
   import { getAudioData, linearPath } from "waveform-path";
   import { format } from "d3";
   import * as Erie from 'erie-web';
+  import {ErieGlobalControl} from "erie-web/src/player/audio-graph-player-proto";
 
   let stopped = true;
   let selected_place: any;
@@ -13,22 +14,16 @@
 
   // we can alter this so it's a better mapping of sound -> series_id
   // let sounds be an object with series_id as key and filename as value 
-  // ex: { city_overview-households-totals_yearly: construction_noise.wav }
-  let sounds = [
-    "bells.wav",
-    "birdsong.wav",
-    "cardinal.mp3",
-    "industrial.mp3",
-    "keyboard-typing.mp3",
-    "wind-chimes.mp3"
-  ]
+  // ex: { city_overview-households-totals_yearly: city_overview-households-totals_yearl..mp3 }
+  let sounds = {};
+  seriesvalues.data.serieses.forEach((series) => {
+    sounds[series.id] = `${series.id}.mp3`;
+  });
 
-  let audios: {
-    [ name: string ]: {
-      audioQueue: Erie.SequenceStream,
-      playing: boolean
-    }
-  } = {};
+  let audios = {};
+  seriesvalues.data.serieses.forEach((series) => {
+    audios[series.id] = undefined;
+  });
 
   $: stopped: series_selection.length === 0;
   $: place_label = selected_place?.PlaceDescriptions[0].display_label;
@@ -43,8 +38,8 @@
           trend: d.trend,
           date: DateTime.fromMillis(d.date, {zone: "GMT"})
       })),
-      soundfile: sounds[i] // instead of an index here we can make sounds an object and use series_id as the key
-      // soundfile: sounds[m.id]
+      // soundfile: sounds[i] // instead of an index here we can make sounds an object and use series_id as the key
+      soundfile: sounds[m.id]
     };
     return seriesInfo;
   })
@@ -134,14 +129,14 @@
       soundData.forEach((series) => {
         let stream = new Erie.Stream();
 
-        let soundURL = new URL(`./sounds/${series.soundfile}`, import.meta.url);
+        let soundURL = new URL(`/sounds/${series.soundfile}`, import.meta.url);
         let tone = new Erie.SampledTone("sample_audio", { mono: soundURL })
         stream.sampling.add(tone);
         stream.tone.set(tone);
         stream.tone.continued(false);
 
         stream.encoding.time.field("series_id", "nominal")
-        .scale("band", 2.0);
+          .scale("band", 2.0);
 
         stream.encoding.detune.field("place_value", "quantitative")
           .scale("polarity", "positive")
@@ -149,7 +144,7 @@
           .scale("range", [100, 700])
           .format("0.4")
 
-        overlay.overlay.push(stream);
+        overlay.add(stream);
       })
 
       //overlay.data.set("name", "data__1");
@@ -180,7 +175,6 @@
       max: seriesInfo.max,
       date: placeInfo.date.ts,
       value: placeInfo.value,
-      sound: seriesInfo.soundfile
     }
   }
 
@@ -199,8 +193,8 @@
       stream.config.set('skipFinishSpeech', true);
 
       // tone
-      let soundURL = new URL(`./sounds/${data.sound}`, import.meta.url);
-      let tone = new Erie.SampledTone("sample_audio", { mono: soundURL })
+      let soundURL = new URL(`./sounds/${series_id}.mp3`, import.meta.url);
+      let tone = new Erie.SampledTone("sample_audio", { mono: soundURL });
       stream.sampling.add(tone);
       stream.tone.set(tone);
       stream.tone.continued(false);
@@ -221,16 +215,15 @@
 
       // play sound
       let audioQueue = await Erie.compileAudioGraph(stream.get());
-      audios[series_id] = {
-        audioQueue: audioQueue,
-        playing: true
-      }
-      await audios[series_id].audioQueue.playQueue();
-      audios[series_id].playing = false;
+      console.log(stream.get())
+      audios[series_id] = audioQueue;
+      await audioQueue.playQueue();
 
     } else {
-      audios[series_id].playing = false;
-      audios[series_id].audioQueue.stopQueue();
+      let audioQueue = audios[series_id];
+      if (audioQueue) {
+        audioQueue.stopQueue();
+      }
     }
   }
 
@@ -267,6 +260,7 @@
               bind:group={series_selection}
               value={series.id}
               disabled={disableCheckbox(selected_place.id, series.id)}
+              on:change={async(e) => await playSound(e)}
             /> 
             {series.SeriesDescriptions[0].display_axis_primary}
           </label>
