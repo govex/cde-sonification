@@ -86,6 +86,7 @@
     spec.config.set('skipFinishSpeech', true);
     spec.config.set('skipTitle', true);
     spec.config.set('skipDescription', true);
+    spec.config.set('skipStopSpeech', true);
     
     soundData.forEach((series) => {
       let stream = new Erie.Stream();
