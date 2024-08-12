@@ -7,6 +7,7 @@
   import { format } from "d3";
   import * as Erie from 'erie-web';
 
+  const MAX_CHECKED = 8;
   let stopped = true;
   let selected_place: any;
   let series_selection:string[] = [];
@@ -43,6 +44,7 @@
         };
         return seriesInfo;
       })
+  $: disable_checkbox = series_selection.length >= MAX_CHECKED;
 
   // async function to compile data from all the disparate files
   // for chosen place and serieses selected
@@ -104,7 +106,7 @@
       stream.encoding.detune.field("place_value", "quantitative")
         .scale("polarity", "positive")
         .scale("domain", [series.min, series.max])
-        .scale("range", [200, 700])
+        .scale("range", [-600, 600])
         .scale("description", "skip")
 
       stream.encoding.timbre.field("series_id", "nominal")
@@ -188,7 +190,7 @@
     <div id="serieses">
       {#each seriesDescriptions.data.serieses as series}
         {#if !skipped.includes(series.id)}
-          <div class={disableCheckbox(selected_place.id, series.id) 
+          <div class={disableCheckbox(selected_place.id, series.id) || disable_checkbox
             ? "disabled" 
             : ""}
           >
