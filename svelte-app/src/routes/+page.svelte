@@ -30,7 +30,7 @@
     }
   } = {};
 
-  $: stopped: series_selection.length === 0;
+  $: stopped = true;
   $: place_label = selected_place?.PlaceDescriptions[0].display_label;
   $: serieses = seriesvalues.data.serieses.map((m,i) => {
     let seriesInfo = {
