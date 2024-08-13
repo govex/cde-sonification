@@ -25,6 +25,8 @@
     "workforce_development-federal_spending-federal_spending_totals_yearly",
     "workforce_development-wage-annualAverageUSD_yearly"
   ]
+  let queue: Erie.SequenceStream;
+
 
   $: place_label = selected_place?.PlaceDescriptions[0].display_label;
   $: serieses = seriesvalues.data.serieses
@@ -163,6 +165,13 @@
     if (scalarText !== undefined && trendText !== undefined) return `${scalarText} numbers mean improvement and this metric is ${trendText}`;
   }
 
+  function handleCheckboxClick(audioQueue) {
+    if (!stopped && audioQueue) {
+      audioQueue.stopQueue();
+      stopped = true;
+    }
+  }
+
 
 </script>
 
@@ -201,6 +210,7 @@
                 bind:group={series_selection}
                 value={series.id}
                 disabled={disableCheckbox(selected_place.id, series.id)}
+                on:change={handleCheckboxClick(queue)}
               /> 
               {series.SeriesDescriptions[0].display_axis_primary}
             </label>
@@ -222,6 +232,7 @@
         <button 
           id="play-button"
           on:click={async() => {
+            queue = audioQueue
             if (audioQueue) {
               if (stopped) {
                 stopped = false
