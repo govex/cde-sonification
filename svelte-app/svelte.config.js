@@ -5,12 +5,12 @@ import { vitePreprocess } from '@sveltejs/kit/vite';
 const config = {
 	preprocess: vitePreprocess(),
 
-    kit: {
-        adapter: adapter(),
-        paths: {
-            base: process.env.NODE_ENV === 'production' ? '/cde-sonification' : '',
-        }
-    }
+	kit: {
+		adapter: adapter({ fallback: '404.html' }),
+		paths: {
+			base: process.env.NODE_ENV == 'production' ? '/sveltekit-gh-pages-spa-template' : ''
+		}
+	}
 };
 
 export default config;
