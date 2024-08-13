@@ -8,7 +8,7 @@ const config = {
 	kit: {
 		adapter: adapter({ fallback: '404.html' }),
 		paths: {
-			base: process.env.NODE_ENV == 'production' ? '/sveltekit-gh-pages-spa-template' : ''
+			base: process.env.NODE_ENV == 'production' ? '/cde-sonification' : ''
 		}
 	}
 };
