@@ -23,7 +23,8 @@
     "safety-violent_crime-100k_yearly",
     "workforce_development-unemployment-percent_monthly",
     "workforce_development-federal_spending-federal_spending_totals_yearly",
-    "workforce_development-wage-annualAverageUSD_yearly"
+    "workforce_development-wage-annualAverageUSD_yearly",
+    "healthy_communities-museums-100k_yearly"
   ]
   let queue: Erie.SequenceStream;
 
@@ -66,6 +67,7 @@
         date: placeData?.date,
         trend_scalar: seriesDescription?.Metric.trend_scalar,
         value_format: seriesDescription?.value_format,
+        display_axis_primary: seriesDescription?.SeriesDescriptions[0].display_axis_primary,
         display_axis_secondary: seriesDescription?.SeriesDescriptions[0].display_axis_secondary,
         sound: audioData,
         soundfile: seriesInfo?.soundfile
@@ -223,12 +225,12 @@
     <div id="waveform">
       {#if series_selection.length > 0}
       {#await overlayData}
-        <div>...loading data</div>
+        <p>...loading data</p>
       {:then soundData}
 
       <div>
         {#await audio}
-        <div>...compiling audio queue</div>
+          <p>...compiling audio queue</p>
         {:then audioQueue}
         <button 
           id="play-button"
@@ -267,7 +269,7 @@
         </defs>
         {#each soundData as sd}
         {#await sd.sound}
-          <g />
+          <p>Loading...</p>
         {:then sound} 
           <path style="fill:none; stroke-width: 3;  stroke:url(#lgrad)">
             <animate
@@ -286,7 +288,12 @@
       </svg>
       <div>
         {#each soundData as sd}
-        <p>{format(sd.value_format)(sd.place_value)} {sd.display_axis_secondary || ""}</p>
+        <p>
+          {format(sd.value_format)(sd.place_value)}
+          {sd.display_axis_secondary || (sd.display_axis_primary.split(" ")[0] === "Total"
+            ? ` is the number of ${sd.display_axis_primary.toLowerCase()}`
+            : ` is the ${sd.display_axis_primary.toLowerCase()}`)}
+        </p>
         {#if sd.trend_scalar && sd.place_trend}
           <p>{processTrend(+sd.trend_scalar, +sd.place_trend)}</p>
         {/if}
