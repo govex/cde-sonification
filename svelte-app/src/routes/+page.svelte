@@ -197,7 +197,7 @@
   {/each}
 </select>
 {#if selected_place}
-  <p>Listen to {place_label}:</p>
+  <p>Select up to {MAX_CHECKED} metrics to include in the sonification.</p>
   <div class="col-2">
     {#if seriesDescriptions}
     <div id="serieses">
@@ -227,7 +227,8 @@
       {#await overlayData}
         <p>...loading data</p>
       {:then soundData}
-
+      
+      <div class="sound">
       <div>
         {#await audio}
           <p>...compiling audio queue</p>
@@ -248,11 +249,7 @@
             }
           }}
           >
-          {#if stopped}
-            Play
-          {:else}
-            Stop
-          {/if}
+          <img src={stopped ? 'play.png' : 'pause.png'} alt={stopped ? 'Play' : 'Stop'}>
         </button>
         {/await}
       </div>
@@ -286,17 +283,21 @@
         {/await}
         {/each}
       </svg>
+      </div>
       <div>
         {#each soundData as sd}
-        <p>
+        <p class="data-text">
           {format(sd.value_format)(sd.place_value)}
           {sd.display_axis_secondary || (sd.display_axis_primary.split(" ")[0] === "Total"
             ? ` is the number of ${sd.display_axis_primary.toLowerCase()}`
             : ` is the ${sd.display_axis_primary.toLowerCase()}`)}
-        </p>
+        
         {#if sd.trend_scalar && sd.place_trend}
-          <p>{processTrend(+sd.trend_scalar, +sd.place_trend)}</p>
+          <ul class="trend-text">
+          <li>{processTrend(+sd.trend_scalar, +sd.place_trend)}</li>
+          </ul>
         {/if}
+        </p>
         {/each}
       </div>
       {:catch error}
@@ -321,5 +322,35 @@
     max-height: 75vh;
     overflow: scroll;
     padding: 10px;
+  }
+  .sound {
+    display: flex;
+    align-items: center;
+    gap: 80px;
+  }
+  .data-text {
+    font-weight: bold;
+  }
+  .trend-text li {
+    color: #4f4f4f;
+    font-weight: normal;
+  }
+  #play-button {
+    padding: 10px;
+    position: absolute;
+    border: none;
+    background: none;
+    margin-top: -50px;
+    margin-left: 10px;
+    font-size: 14px;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #play-button img {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
   }
 </style>
