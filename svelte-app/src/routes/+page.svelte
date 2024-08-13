@@ -165,7 +165,7 @@
     if (scalarText !== undefined && trendText !== undefined) return `${scalarText} numbers mean improvement and this metric is ${trendText}`;
   }
 
-  function handleCheckboxClick(audioQueue) {
+  function stopQueue(audioQueue) {
     if (!stopped && audioQueue) {
       audioQueue.stopQueue();
       stopped = true;
@@ -184,6 +184,7 @@
 		bind:value={selected_place}
     on:change={() => {
       series_selection = []
+      stopQueue(queue)
     }}
 >
   <option value={undefined}>Choose a place...</option>
@@ -210,7 +211,7 @@
                 bind:group={series_selection}
                 value={series.id}
                 disabled={disableCheckbox(selected_place.id, series.id)}
-                on:change={handleCheckboxClick(queue)}
+                on:change={stopQueue(queue)}
               /> 
               {series.SeriesDescriptions[0].display_axis_primary}
             </label>
