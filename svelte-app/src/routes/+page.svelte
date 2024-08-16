@@ -60,7 +60,6 @@
       let audioData = getAudioData(`/sounds/${seriesInfo?.soundfile}`);
       let placeData = seriesInfo?.data.find(f => f.place_id === selected_place.id)
       let seriesDescription = seriesDescriptions.data.serieses.find(f => f.id === s)
-
       return ({
         series_id: s,
         min: seriesInfo?.min,
@@ -228,6 +227,22 @@
     }
   }
 
+  function displayYears(data:any) {
+    let years = document.getElementById("years");
+    years.innerHTML = "";
+    if (data.length === 1) {
+      let date = new Date(data[0].date)
+      let year = date.getFullYear()
+      years.innerHTML = `Year of data collection for this sonification:\n${year}`
+    } else {
+      let date1 = new Date(data[data.length - 1].date)
+      let date2 = new Date(data[0].date)
+      let year1 = date1.getFullYear()
+      let year2 = date2.getFullYear()
+      years.innerHTML = `Years of data collection for this sonification:\n${year1} - ${year2}`
+    }
+  }
+
 
 </script>
 
@@ -336,22 +351,22 @@
                 {/each}
               </defs>
               {#each soundData as sd, i}
-              {#await sd.sound}
-                <p>Loading...</p>
-              {:then sound} 
-                <path style="fill:none; stroke-width: 3;  stroke:url(#lgrad_{i})" transform="translate(0, {i * 28})">
-                  <animate
-                      attributeName="d"
-                      dur="2.54s"
-                      repeatCount="indefinite"
-                      calcMode="linear"
-                      values={linearPath(sound, { 
-                          samples: 100, type: 'steps', top: 20, animation: true
-                        }
-                      )}
-                  />
-                </path>
-              {/await}
+                {#await sd.sound}
+                  <p>Loading...</p>
+                {:then sound} 
+                  <path style="fill:none; stroke-width: 3;  stroke:url(#lgrad_{i})" transform="translate(0, {i * 28})">
+                    <animate
+                        attributeName="d"
+                        dur="2.54s"
+                        repeatCount="indefinite"
+                        calcMode="linear"
+                        values={linearPath(sound, { 
+                            samples: 100, type: 'steps', top: 20, animation: true
+                          }
+                        )}
+                    />
+                  </path>
+                {/await}
               {/each}
             </svg>
           </div>
@@ -411,6 +426,7 @@
                     queue = audioQueue
                     current_series_playing = series.SeriesDescriptions[0].display_axis_primary;
                     series_is_stopped[series.SeriesDescriptions[0].display_axis_primary] = false;
+                    displayYears(data);
                     await audioQueue.playQueue()
                     series_is_stopped[series.SeriesDescriptions[0].display_axis_primary] = true;
                     stopped = true
@@ -429,6 +445,7 @@
           {/if}
           {/each}
         </div>
+        <div id="years"></div>
       </div>
     {:else}
       <div style="font-size:20px; margin-top:40px; font-weight:bold">We don't have that data yet!</div>
@@ -513,6 +530,16 @@
 
   #waveform {
     margin-top: -120px;
+  }
+
+  #years {
+    width: 400px;
+    height: 200px;
+    align-content: center;
+    justify-content: center;
+    text-align: center;
+    font-weight: bold;
+    font-size: 20px;
   }
 
 </style>
