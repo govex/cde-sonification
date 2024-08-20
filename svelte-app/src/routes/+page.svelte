@@ -6,6 +6,7 @@
   import { getAudioData, linearPath } from "waveform-path";
   import { format } from "d3";
   import * as Erie from 'erie-web';
+  import { base } from '$app/paths';
 
   const MAX_CHECKED = 8;
   let stopped = true;
@@ -57,7 +58,7 @@
   async function compileOverlayData(selected_place:any, series_selection:string[]) {
     let overlayData = series_selection.map(s => {
       let seriesInfo = serieses.find(f => f.id === s)
-      let audioData = getAudioData(`/sounds/${seriesInfo?.soundfile}`);
+      let audioData = getAudioData(`${base}/sounds/${seriesInfo?.soundfile}`);
       let placeData = seriesInfo?.data.find(f => f.place_id === selected_place.id)
       let seriesDescription = seriesDescriptions.data.serieses.find(f => f.id === s)
       return ({
