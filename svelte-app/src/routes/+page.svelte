@@ -81,7 +81,7 @@
 
   async function getTrendData(selected_place:any) {
     try {
-      let data = (await import(/* @vite-ignore */ `${base}/data/${selected_place.id}.json`)).default;
+      let data = (await import(/* @vite-ignore */ `../lib/data/${selected_place.id}.json`)).default;
       return data;
     } catch (error) {
       return null;
