@@ -374,16 +374,23 @@
             {#each soundData as sd}
               <p class="data-text">
                 {format(sd.value_format)(sd.place_value)}
-                {sd.display_axis_secondary || (sd.display_axis_primary.split(" ")[0] === "Total"
-                  ? ` is the number of ${sd.display_axis_primary.toLowerCase()}`
-                  : ` is the ${sd.display_axis_primary.toLowerCase()}`)}
-              
-                {#if sd.trend_scalar && sd.place_trend}
-                  <ul class="trend-text">
-                  <li>{processTrend(+sd.trend_scalar, +sd.place_trend)}</li>
-                  </ul>
+                {#if sd.display_axis_secondary}
+                  {`${sd.display_axis_secondary} (${new Date(sd.date.ts).getFullYear()})`}
+                {:else}
+                  {(sd.display_axis_primary.split(" ")[0] === "Total"
+                    ? ` is the number of ${sd.display_axis_primary.toLowerCase()} (${new Date(sd.date.ts).getFullYear()})`
+                    : ` is the ${sd.display_axis_primary.toLowerCase()} (${new Date(sd.date.ts).getFullYear()})`)}
                 {/if}
               </p>
+              
+              <ul class="trend-text">
+                <li>The maximum across all cities is {format(sd.value_format)(sd.max)}</li>
+                <li>The minimum across all cities is {format(sd.value_format)(sd.min)}</li>
+              {#if sd.trend_scalar && sd.place_trend}
+                <li>{processTrend(+sd.trend_scalar, +sd.place_trend)}</li>
+              {/if}
+              </ul>
+              
             {/each}
           </div>
           {:catch error}
