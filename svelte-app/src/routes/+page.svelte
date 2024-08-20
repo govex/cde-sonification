@@ -84,7 +84,7 @@
     "c-us-wy-cys": c_us_wy_cys,
   }
 
-  $: cityData = selected_place ? placeMap[selected_place.id] : null;
+  // $: cityData = async() selected_place ? placeMap[selected_place.id] : null;
 
   const MAX_CHECKED = 8;
   let stopped = true;
@@ -155,6 +155,17 @@
       })
     })
     return overlayData;
+  }
+
+  async function getTrendData() {
+    await new Promise(resolve => setTimeout(resolve, 0));
+    if (selected_place) {
+      let data = placeMap[selected_place.id];
+      setStoppedMap(data);
+      return data;
+    } else {
+      return null;
+    }
   }
 
   function setStoppedMap(trendData) {
@@ -312,7 +323,6 @@
       years.innerHTML = `Years of data collection for this sonification:\n${year1} - ${year2}`
     }
   }
-
 
 </script>
 
@@ -472,8 +482,10 @@
     </div>
   {/if}
 {:else}
+  {#await getTrendData()}
+    <div>Loading...</div>
+  {:then cityData}
     {#if cityData}
-      {#if setStoppedMap(cityData)}{/if}
       <p>Select a metric to hear its trend data.</p>
       <div class="col-2">
         <div class="serieses">
@@ -523,6 +535,7 @@
     {:else}
       <div style="font-size:20px; margin-top:40px; font-weight:bold">We don't have that data yet!</div>
     {/if}
+  {/await}
 {/if}
 
 <style>
