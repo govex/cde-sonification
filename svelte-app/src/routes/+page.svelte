@@ -404,7 +404,7 @@
   {/if}
 {:else}
   {#if selected_place}
-    {#await getTrendData(selected_place)}
+    {#await import(`../lib/data/${selected_place.id}`)}
       <p>Loading...</p>
     {:then cityData}
     {#if cityData}
