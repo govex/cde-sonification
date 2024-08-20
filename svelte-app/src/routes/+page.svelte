@@ -8,6 +8,84 @@
   import * as Erie from 'erie-web';
   import { base } from '$app/paths';
 
+  import c_pr__sju from "$lib/data/c-pr--sju.json";
+  import c_us_ar_lit from "$lib/data/c-us-ar-lit.json";
+  import c_us_az_msc from "$lib/data/c-us-az-msc.json";
+  import c_us_ca_bfl from "$lib/data/c-us-ca-bfl.json";
+  import c_us_ca_lgb from "$lib/data/c-us-ca-lgb.json";
+  import c_us_ca_sac from "$lib/data/c-us-ca-sac.json";
+  import c_us_co_den from "$lib/data/c-us-co-den.json";
+  import c_us_de_ilg from "$lib/data/c-us-de-ilg.json";
+  import c_us_fl_jax from "$lib/data/c-us-fl-jax.json";
+  import c_us_fl_mia from "$lib/data/c-us-fl-mia.json";
+  import c_us_ga_atl from "$lib/data/c-us-ga-atl.json";
+  import c_us_ma_bos from "$lib/data/c-us-ma-bos.json";
+  import c_us_md_bal from "$lib/data/c-us-md-bal.json";
+  import c_us_mn_mes from "$lib/data/c-us-mn-mes.json";
+  import c_us_nc_gbo from "$lib/data/c-us-nc-gbo.json";
+  import c_us_ne_oma from "$lib/data/c-us-ne-oma.json";
+  import c_us_nj_jec from "$lib/data/c-us-nj-jec.json";
+  import c_us_nv_hnz from "$lib/data/c-us-nv-hnz.json";
+  import c_us_nv_las from "$lib/data/c-us-nv-las.json";
+  import c_us_oh_tol from "$lib/data/c-us-oh-tol.json";
+  import c_us_ok_okc from "$lib/data/c-us-ok-okc.json";
+  import c_us_or_pdx from "$lib/data/c-us-or-pdx.json";
+  import c_us_pa_pit from "$lib/data/c-us-pa-pit.json";
+  import c_us_ri_pvd from "$lib/data/c-us-ri-pvd.json";
+  import c_us_sc_chs from "$lib/data/c-us-sc-chs.json";
+  import c_us_sd_fsd from "$lib/data/c-us-sd-fsd.json";
+  import c_us_tn_bna from "$lib/data/c-us-tn-bna.json";
+  import c_us_tx_aus from "$lib/data/c-us-tx-aus.json";
+  import c_us_tx_dal from "$lib/data/c-us-tx-dal.json";
+  import c_us_tx_lrd from "$lib/data/c-us-tx-lrd.json";
+  import c_us_ut_slc from "$lib/data/c-us-ut-slc.json";
+  import c_us_va_orf from "$lib/data/c-us-va-orf.json";
+  import c_us_wa_geg from "$lib/data/c-us-wa-geg.json";
+  import c_us_wa_sea from "$lib/data/c-us-wa-sea.json";
+  import c_us_wi_mke from "$lib/data/c-us-wi-mke.json";
+  import c_us_wy_cys from "$lib/data/c-us-wy-cys.json";
+
+  const placeMap = {
+    "c-pr--sju": c_pr__sju,
+    "c-us-ar-lit": c_us_ar_lit,
+    "c-us-az-msc": c_us_az_msc,
+    "c-us-ca-bfl": c_us_ca_bfl,
+    "c-us-ca-lgb": c_us_ca_lgb,
+    "c-us-ca-sac": c_us_ca_sac,
+    "c-us-co-den": c_us_co_den,
+    "c-us-de-ilg": c_us_de_ilg,
+    "c-us-fl-jax": c_us_fl_jax, 
+    "c-us-fl-mia": c_us_fl_mia, 
+    "c-us-ga-atl": c_us_ga_atl,
+    "c-us-ma-bos": c_us_ma_bos,
+    "c-us-md-bal": c_us_md_bal,
+    "c-us-mn-mes": c_us_mn_mes,
+    "c-us-nc-gbo": c_us_nc_gbo,
+    "c-us-ne-oma": c_us_ne_oma,
+    "c-us-nj-jec": c_us_nj_jec,
+    "c-us-nv-hnz": c_us_nv_hnz,
+    "c-us-nv-las": c_us_nv_las,
+    "c-us-oh-tol": c_us_oh_tol,
+    "c-us-ok-okc": c_us_ok_okc,
+    "c-us-or-pdx": c_us_or_pdx,
+    "c-us-pa-pit": c_us_pa_pit,
+    "c-us-ri-pvd": c_us_ri_pvd,
+    "c-us-sc-chs": c_us_sc_chs,
+    "c-us-sd-fsd": c_us_sd_fsd,
+    "c-us-tn-bna": c_us_tn_bna,
+    "c-us-tx-aus": c_us_tx_aus,
+    "c-us-tx-dal": c_us_tx_dal,
+    "c-us-tx-lrd": c_us_tx_lrd,
+    "c-us-ut-slc": c_us_ut_slc,
+    "c-us-va-orf": c_us_va_orf,
+    "c-us-wa-geg": c_us_wa_geg,
+    "c-us-wa-sea": c_us_wa_sea,
+    "c-us-wi-mke": c_us_wi_mke,
+    "c-us-wy-cys": c_us_wy_cys,
+  }
+
+  $: cityData = selected_place ? placeMap[selected_place.id] : null;
+
   const MAX_CHECKED = 8;
   let stopped = true;
   let selected_place: any;
@@ -77,15 +155,6 @@
       })
     })
     return overlayData;
-  }
-
-  async function getTrendData(selected_place:any) {
-    try {
-      let data = (await import(/* @vite-ignore */ `../lib/data/${selected_place.id}.json`)).default;
-      return data;
-    } catch (error) {
-      return null;
-    }
   }
 
   function setStoppedMap(trendData) {
@@ -403,10 +472,6 @@
     </div>
   {/if}
 {:else}
-  {#if selected_place}
-    {#await getTrendData(selected_place)}
-      <p>Loading...</p>
-    {:then cityData}
     {#if cityData}
       {#if setStoppedMap(cityData)}{/if}
       <p>Select a metric to hear its trend data.</p>
@@ -458,8 +523,6 @@
     {:else}
       <div style="font-size:20px; margin-top:40px; font-weight:bold">We don't have that data yet!</div>
     {/if}
-    {/await}
-  {/if}
 {/if}
 
 <style>
