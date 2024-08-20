@@ -81,7 +81,7 @@
 
   async function getTrendData(selected_place:any) {
     try {
-      let data = (await import(/* @vite-ignore */ `../lib/data/${selected_place.id}.json`)).default;
+      let data = (await import(/* @vite-ignore */ `${base}/data/${selected_place.id}.json`)).default;
       return data;
     } catch (error) {
       return null;
@@ -404,7 +404,7 @@
   {/if}
 {:else}
   {#if selected_place}
-    {#await import(`../lib/data/${selected_place.id}`)}
+    {#await getTrendData(selected_place)}
       <p>Loading...</p>
     {:then cityData}
     {#if cityData}
