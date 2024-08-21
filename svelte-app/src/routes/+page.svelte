@@ -312,13 +312,13 @@
     years.innerHTML = "";
     if (data.length === 1) {
       let date = new Date(data[0].date)
-      let year = date.getFullYear()
+      let year = date.getFullYear() + 1
       years.innerHTML = `Year of data collection for this sonification:\n${year}`
     } else {
       let date1 = new Date(data[data.length - 1].date)
       let date2 = new Date(data[0].date)
-      let year1 = date1.getFullYear()
-      let year2 = date2.getFullYear()
+      let year1 = date1.getFullYear() + 1
+      let year2 = date2.getFullYear() + 1
       years.innerHTML = `Years of data collection for this sonification:\n${year1} - ${year2}`
     }
   }
