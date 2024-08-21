@@ -454,11 +454,11 @@
               <p class="data-text">
                 {format(sd.value_format)(sd.place_value)}
                 {#if sd.display_axis_secondary}
-                  {`${sd.display_axis_secondary} (${new Date(sd.date.ts).getFullYear()})`}
+                  {`${sd.display_axis_secondary} (${new Date(sd.date.ts).getFullYear() + 1})`}
                 {:else}
                   {(sd.display_axis_primary.split(" ")[0] === "Total"
-                    ? ` is the number of ${sd.display_axis_primary.toLowerCase()} (${new Date(sd.date.ts).getFullYear()})`
-                    : ` is the ${sd.display_axis_primary.toLowerCase()} (${new Date(sd.date.ts).getFullYear()})`)}
+                    ? ` is the number of ${sd.display_axis_primary.toLowerCase()} (${new Date(sd.date.ts).getFullYear() + 1})`
+                    : ` is the ${sd.display_axis_primary.toLowerCase()} (${new Date(sd.date.ts).getFullYear() + 1})`)}
                 {/if}
               </p>
               
