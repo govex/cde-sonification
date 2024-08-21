@@ -157,11 +157,10 @@
     return overlayData;
   }
 
-  async function getTrendData() {
+  async function getTrendData(selected_place) {
     await new Promise(resolve => setTimeout(resolve, 0));
     if (selected_place) {
       let data = placeMap[selected_place.id];
-      setStoppedMap(data);
       return data;
     } else {
       return null;
@@ -482,10 +481,11 @@
     </div>
   {/if}
 {:else}
-  {#await getTrendData()}
+  {#await getTrendData(selected_place)}
     <div>Loading...</div>
   {:then cityData}
     {#if cityData}
+      {#if setStoppedMap(cityData)}{/if}
       <p>Select a metric to hear its trend data.</p>
       <div class="col-2">
         <div class="serieses">
